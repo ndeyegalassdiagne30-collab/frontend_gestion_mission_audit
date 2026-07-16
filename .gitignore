@@ -1,0 +1,7 @@
+node_modules
+documentation.md
+db.json
+package.json
+package-lock.json
+tailwind.config.js
+

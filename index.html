@@ -1,0 +1,31 @@
+ <!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuditFlow - Gestion des missions d'audit</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <link rel="stylesheet" href="./css/tailwind.css" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body class="min-h-screen bg-slate-100 font-sans text-slate-900">
+  <div id="sidebarRoot"></div>
+  <div id="navbarRoot"></div>
+
+  <main class="min-h-screen pt-16 lg:pl-72">
+    <div id="app" class="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8"></div>
+  </main>
+
+  <div id="toast" class="pointer-events-none fixed right-5 top-20 z-50 hidden max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-2xl"></div>
+
+  <div id="modalRoot"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
