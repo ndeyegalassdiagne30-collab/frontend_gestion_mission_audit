@@ -1,6 +1,6 @@
 import { pageHeader, renderFilterBar } from "../components/pageHerder.js";
 import { renderTable, actionButton } from "../components/table.js";
-import { openModal, closeModal } from "../components/modal.js";
+import { openDrawer, closeDrawer } from "../components/drawer.js";
 import { openConfirmModal } from "../components/confirmModal.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
@@ -78,8 +78,8 @@ function userFormBody(utilisateur, isEdit, errors = {}) {
 function defaultButtons(confirmLabel = "Enregistrer") {
   return `
     <div class="mt-2 flex justify-end gap-3">
-      <button type="button" data-modal-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
-      <button type="submit" data-modal-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
+      <button type="button" data-drawer-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+      <button type="submit" data-drawer-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
         <i class="fa-solid fa-floppy-disk"></i>
         <span>${confirmLabel}</span>
       </button>
@@ -87,28 +87,29 @@ function defaultButtons(confirmLabel = "Enregistrer") {
   `;
 }
 
-// Ouvre la fenêtre modale de création ou modification d'un utilisateur (réservée à l'administrateur)
+// Ouvre le drawer de création ou modification d'un utilisateur (réservé à l'administrateur)
 function openUserForm(utilisateur = null) {
   const isEdit = utilisateur !== null;
   const currentUserId = getCurrentUser().id;
 
-  openModal({
+  openDrawer({
     title: isEdit ? "Modifier l'utilisateur" : "Nouvel utilisateur",
+    subtitle: isEdit ? `${utilisateur.prenom} ${utilisateur.nom}` : "",
     icon: "fa-user",
     body: userFormBody(utilisateur, isEdit),
     confirmLabel: isEdit ? "Enregistrer" : "Créer",
-    onConfirm: async (modalElement) => {
+    onConfirm: async (drawerElement) => {
       const data = {
-        nom: modalElement.querySelector("#userNom").value.trim(),
-        prenom: modalElement.querySelector("#userPrenom").value.trim(),
-        email: modalElement.querySelector("#userEmail").value.trim(),
-        mot_de_passe: modalElement.querySelector("#userMotDePasse").value,
-        telephone: modalElement.querySelector("#userTelephone").value.trim(),
-        role: modalElement.querySelector("#userRole").value,
+        nom: drawerElement.querySelector("#userNom").value.trim(),
+        prenom: drawerElement.querySelector("#userPrenom").value.trim(),
+        email: drawerElement.querySelector("#userEmail").value.trim(),
+        mot_de_passe: drawerElement.querySelector("#userMotDePasse").value,
+        telephone: drawerElement.querySelector("#userTelephone").value.trim(),
+        role: drawerElement.querySelector("#userRole").value,
         photo: utilisateur?.photo || "",
       };
-      const motDePasseConfirm = modalElement.querySelector("#userMotDePasseConfirm").value;
-      const photoFile = modalElement.querySelector("#userPhoto")?.files[0];
+      const motDePasseConfirm = drawerElement.querySelector("#userMotDePasseConfirm").value;
+      const photoFile = drawerElement.querySelector("#userPhoto")?.files[0];
 
       const errors = {};
       if (!data.nom) errors.nom = "Le nom est requis";
@@ -121,9 +122,9 @@ function openUserForm(utilisateur = null) {
       if (!data.telephone) errors.telephone = "Le téléphone est requis";
 
       if (Object.keys(errors).length > 0) {
-        const formEl = modalElement.querySelector("[data-modal-form]");
+        const formEl = drawerElement.querySelector("[data-drawer-form]");
         formEl.innerHTML = userFormBody({ ...utilisateur, ...data }, isEdit, errors) + defaultButtons(isEdit ? "Enregistrer" : "Créer");
-        formEl.querySelector("[data-modal-cancel]").addEventListener("click", closeModal);
+        formEl.querySelector("[data-drawer-cancel]").addEventListener("click", closeDrawer);
         return false;
       }
 

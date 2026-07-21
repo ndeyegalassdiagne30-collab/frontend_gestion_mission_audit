@@ -1,4 +1,4 @@
-import { isAdmin, isExpertComptable, logout } from "../services/authService.js";
+import { isAdmin, isExpertComptable, isClient, logout } from "../services/authService.js";
 
 const ADMIN_LINKS = [
   { page: "dashboard", label: "Tableau de bord", icon: "fa-table-cells-large" },
@@ -26,12 +26,19 @@ const AUDITEUR_LINKS = [
   { page: "profil", label: "Mon profil", icon: "fa-circle-user" },
 ];
 
+const CLIENT_LINKS = [
+  { page: "missions", label: "Mes missions", icon: "fa-briefcase" },
+  { page: "profil", label: "Mon profil", icon: "fa-circle-user" },
+];
+
 // Retourne les liens de navigation autorisés selon le rôle de l'utilisateur connecté
 function getLinks() {
-  if (isAdmin()) 
+  if (isAdmin())
     return ADMIN_LINKS;
-  if (isExpertComptable()) 
+  if (isExpertComptable())
     return EXPERT_LINKS;
+  if (isClient())
+    return CLIENT_LINKS;
   return AUDITEUR_LINKS;
 }
 

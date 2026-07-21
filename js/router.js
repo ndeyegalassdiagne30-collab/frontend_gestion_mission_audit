@@ -7,7 +7,7 @@ import { renderDocumentPage } from "./pages/documentPage.js";
 import { renderUserPage } from "./pages/userPage.js";
 import { renderJournalActivitePage } from "./pages/journa_activitePage.js";
 import { renderProfilePage } from "./pages/profilePage.js";
-import { isAdmin, isExpertComptable, isAuditeur, isAuthenticated } from "./services/authService.js";
+import { isAdmin, isExpertComptable, isAuditeur, isClient, isAuthenticated } from "./services/authService.js";
 import { renderLoginPage } from "./pages/loginPage.js";
 
 const routes = {
@@ -23,20 +23,24 @@ const routes = {
 
 // Retourne la page affichée par défaut après connexion
 function getDefaultPage() {
+  if (isClient())
+    return "missions";
   return "dashboard";
 }
 
 // Vérifie si l'utilisateur connecté a le droit d'accéder à la page demandée
 function isPageAllowed(page) {
-  if (["dashboard", "documents", "profil"].includes(page)) 
+  if (page === "profil")
     return true;
-  if (page === "missions") 
+  if (page === "missions")
+    return isAdmin() || isExpertComptable() || isAuditeur() || isClient();
+  if (["dashboard", "documents"].includes(page))
     return isAdmin() || isExpertComptable() || isAuditeur();
-  if (page === "clients") 
+  if (page === "clients")
     return isAdmin() || isExpertComptable();
-  if (page === "affectations") 
+  if (page === "affectations")
     return isExpertComptable();
-  if (["utilisateurs", "journal"].includes(page)) 
+  if (["utilisateurs", "journal"].includes(page))
     return isAdmin();
   return false;
 }

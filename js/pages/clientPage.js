@@ -1,7 +1,8 @@
 import { pageHeader, renderFilterBar } from "../components/pageHerder.js";
 import { renderTable, actionButton } from "../components/table.js";
-import { openModal, closeModal } from "../components/modal.js";
+import { openDrawer, closeDrawer } from "../components/drawer.js";
 import { openConfirmModal } from "../components/confirmModal.js";
+import { createSlideToConfirm } from "../components/slideToConfirm.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { sameId } from "../utils/id.js";
@@ -11,7 +12,14 @@ import {
   getClients,
   updateClient,
 } from "../services/clientService.js";
+import { createUser } from "../services/userService.js";
 import { getCurrentUser } from "../services/authService.js";
+
+// Classes (littérales, scannées par Tailwind) pour l'apparition/disparition animée des champs du compte client
+const ACCOUNT_FIELDS_WRAPPER_HIDDEN = "grid overflow-hidden transition-[grid-template-rows] duration-500 ease-out [grid-template-rows:0fr]";
+const ACCOUNT_FIELDS_WRAPPER_VISIBLE = "grid overflow-hidden transition-[grid-template-rows] duration-500 ease-out [grid-template-rows:1fr]";
+const ACCOUNT_FIELDS_INNER_HIDDEN = "grid grid-cols-1 gap-4 pt-4 opacity-0 -translate-y-1 transition-all duration-500 sm:grid-cols-2";
+const ACCOUNT_FIELDS_INNER_VISIBLE = "grid grid-cols-1 gap-4 pt-4 opacity-100 translate-y-0 transition-all duration-500 sm:grid-cols-2";
 
 // Génère le formulaire de création/modification d'un client
 function clientFormBody(client, errors = {}) {
@@ -60,20 +68,44 @@ function clientFormBody(client, errors = {}) {
           <option value="inactif" ${client?.statut === "inactif" ? "selected" : ""}>Inactif</option>
         </select>
       </div>
+
+      ${!client ? `
+        <div class="mt-4 border-t border-slate-100 pt-4">
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Accès client</label>
+          <div id="clientAccountSlide"></div>
+
+          <div id="clientAccountFields" class="${ACCOUNT_FIELDS_WRAPPER_HIDDEN}">
+            <div class="min-h-0 overflow-hidden">
+              <div id="clientAccountFieldsInner" class="${ACCOUNT_FIELDS_INNER_HIDDEN}">
+                <div>
+                  <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientMotDePasse">Mot de passe *</label>
+                  <input class="w-full rounded-2xl border ${errors.mot_de_passe ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="password" id="clientMotDePasse" placeholder="••••••••" autocomplete="new-password" />
+                  ${errors.mot_de_passe ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.mot_de_passe}</p>` : ""}
+                </div>
+                <div>
+                  <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientMotDePasseConfirm">Confirmation *</label>
+                  <input class="w-full rounded-2xl border ${errors.mot_de_passe_confirm ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="password" id="clientMotDePasseConfirm" placeholder="••••••••" autocomplete="new-password" />
+                  ${errors.mot_de_passe_confirm ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.mot_de_passe_confirm}</p>` : ""}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ` : ""}
     </div>
   `;
 }
 
 // Extrait les valeurs saisies dans le formulaire client
-function readClientForm(modalElement) {
+function readClientForm(drawerElement) {
   return {
-    raison_sociale: modalElement.querySelector("#clientRaisonSociale").value.trim(),
-    ninea: modalElement.querySelector("#clientNinea").value.trim(),
-    adresse: modalElement.querySelector("#clientAdresse").value.trim(),
-    telephone: modalElement.querySelector("#clientTelephone").value.trim(),
-    email: modalElement.querySelector("#clientEmail").value.trim(),
-    date_creation: modalElement.querySelector("#clientDateCreation").value,
-    statut: modalElement.querySelector("#clientStatut").value,
+    raison_sociale: drawerElement.querySelector("#clientRaisonSociale").value.trim(),
+    ninea: drawerElement.querySelector("#clientNinea").value.trim(),
+    adresse: drawerElement.querySelector("#clientAdresse").value.trim(),
+    telephone: drawerElement.querySelector("#clientTelephone").value.trim(),
+    email: drawerElement.querySelector("#clientEmail").value.trim(),
+    date_creation: drawerElement.querySelector("#clientDateCreation").value,
+    statut: drawerElement.querySelector("#clientStatut").value,
   };
 }
 
@@ -89,23 +121,77 @@ function validateClientForm(data) {
   return errors;
 }
 
-// Ouvre la fenêtre modale de création ou modification d'un client
+// Vérifie le mot de passe et sa confirmation, uniquement requis quand l'option "compte client" est activée
+function validateAccountFields(motDePasse, motDePasseConfirm) {
+  const errors = {};
+  if (!motDePasse) errors.mot_de_passe = "Le mot de passe est requis";
+  else if (motDePasse.length < 6) errors.mot_de_passe = "Le mot de passe doit contenir au moins 6 caractères";
+  if (!motDePasseConfirm) errors.mot_de_passe_confirm = "La confirmation est requise";
+  else if (motDePasse && motDePasseConfirm !== motDePasse) errors.mot_de_passe_confirm = "Les mots de passe ne correspondent pas";
+  return errors;
+}
+
+// Ouvre le drawer de création ou modification d'un client
 function openClientForm(client = null) {
   const utilisateurId = getCurrentUser().id;
+  let accountConfirmed = false;
 
-  openModal({
+  // (Ré)initialise le composant "glisser pour créer un compte" et branche l'apparition animée des champs associés
+  function mountAccountSlide(drawerElement) {
+    const slideContainer = drawerElement.querySelector("#clientAccountSlide");
+    if (!slideContainer) return;
+
+    const fieldsWrapper = drawerElement.querySelector("#clientAccountFields");
+    const fieldsInner = drawerElement.querySelector("#clientAccountFieldsInner");
+
+    createSlideToConfirm(slideContainer, {
+      label: "Glisser pour créer un client avec un compte",
+      confirmedLabel: "Client avec compte",
+      resetLabel: "Retirer le compte",
+      confirmed: accountConfirmed,
+      onConfirm: () => {
+        accountConfirmed = true;
+        fieldsWrapper.className = ACCOUNT_FIELDS_WRAPPER_VISIBLE;
+        fieldsInner.className = ACCOUNT_FIELDS_INNER_VISIBLE;
+      },
+      onReset: () => {
+        accountConfirmed = false;
+        fieldsWrapper.className = ACCOUNT_FIELDS_WRAPPER_HIDDEN;
+        fieldsInner.className = ACCOUNT_FIELDS_INNER_HIDDEN;
+      },
+    });
+
+    if (accountConfirmed) {
+      fieldsWrapper.className = ACCOUNT_FIELDS_WRAPPER_VISIBLE;
+      fieldsInner.className = ACCOUNT_FIELDS_INNER_VISIBLE;
+    }
+  }
+
+  openDrawer({
     title: client ? "Modifier le client" : "Nouveau client",
+    subtitle: client ? client.raison_sociale : "",
     icon: "fa-building",
     body: clientFormBody(client),
     confirmLabel: client ? "Enregistrer" : "Créer",
-    onConfirm: async (modalElement) => {
-      const data = readClientForm(modalElement);
+    onMount: (drawerElement) => {
+      mountAccountSlide(drawerElement);
+      drawerElement.querySelector("input, select, textarea")?.focus();
+    },
+    onConfirm: async (drawerElement) => {
+      const data = readClientForm(drawerElement);
       const errors = validateClientForm(data);
 
+      if (!client && accountConfirmed) {
+        const motDePasse = drawerElement.querySelector("#clientMotDePasse")?.value || "";
+        const motDePasseConfirm = drawerElement.querySelector("#clientMotDePasseConfirm")?.value || "";
+        Object.assign(errors, validateAccountFields(motDePasse, motDePasseConfirm));
+      }
+
       if (Object.keys(errors).length > 0) {
-        const formEl = modalElement.querySelector("[data-modal-form]");
+        const formEl = drawerElement.querySelector("[data-drawer-form]");
         formEl.innerHTML = clientFormBody(data, errors) + defaultButtons();
-        formEl.querySelector("[data-modal-cancel]").addEventListener("click", closeModal);
+        formEl.querySelector("[data-drawer-cancel]").addEventListener("click", closeDrawer);
+        mountAccountSlide(formEl);
         return false;
       }
 
@@ -114,8 +200,27 @@ function openClientForm(client = null) {
           await updateClient(client.id, data, utilisateurId);
           showToast("Client modifié avec succès.");
         } else {
-          await createClient(data, utilisateurId);
-          showToast("Client créé avec succès.");
+          const createdClient = await createClient(data, utilisateurId);
+
+          if (accountConfirmed) {
+            const motDePasse = drawerElement.querySelector("#clientMotDePasse").value;
+            try {
+              await createUser({
+                nom: "Client",
+                prenom: data.raison_sociale,
+                email: data.email,
+                telephone: data.telephone,
+                mot_de_passe: motDePasse,
+                role: "client",
+                clientId: createdClient.id,
+              }, utilisateurId);
+              showToast("Client créé avec un compte d'accès.");
+            } catch (accountError) {
+              showToast(`Client créé, mais le compte n'a pas pu être créé : ${accountError.message}`, "error");
+            }
+          } else {
+            showToast("Client créé avec succès.");
+          }
         }
         await renderClientPage();
         return true;
@@ -131,8 +236,8 @@ function openClientForm(client = null) {
 function defaultButtons() {
   return `
     <div class="mt-2 flex justify-end gap-3">
-      <button type="button" data-modal-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
-      <button type="submit" data-modal-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
+      <button type="button" data-drawer-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+      <button type="submit" data-drawer-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
         <i class="fa-solid fa-floppy-disk"></i>
         <span>Enregistrer</span>
       </button>
@@ -140,9 +245,9 @@ function defaultButtons() {
   `;
 }
 
-// Ouvre la fenêtre modale affichant le détail d'un client
+// Ouvre le drawer affichant le détail d'un client
 function openClientDetails(client) {
-  openModal({
+  openDrawer({
     title: "Détails du client",
     icon: "fa-eye",
     confirmLabel: "Fermer",

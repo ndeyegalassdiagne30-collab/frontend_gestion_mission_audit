@@ -1,6 +1,6 @@
 import { pageHeader, renderFilterBar } from "../components/pageHerder.js";
 import { renderTable, actionButton } from "../components/table.js";
-import { openModal, closeModal } from "../components/modal.js";
+import { openDrawer, closeDrawer } from "../components/drawer.js";
 import { openConfirmModal } from "../components/confirmModal.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
@@ -13,7 +13,7 @@ import {
 } from "../services/missionService.js";
 import { getClients } from "../services/clientService.js";
 import { getUsers } from "../services/userService.js";
-import { getCurrentUser, isAuditeur, isExpertComptable } from "../services/authService.js";
+import { getCurrentUser, isAuditeur, isExpertComptable, isClient } from "../services/authService.js";
 
 const STATUT_LABELS = {
   en_cours: "En cours",
@@ -116,8 +116,8 @@ function missionFormBody(mission, clients, experts, auditeurs, errors = {}) {
 function defaultButtons() {
   return `
     <div class="mt-2 flex justify-end gap-3">
-      <button type="button" data-modal-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
-      <button type="submit" data-modal-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
+      <button type="button" data-drawer-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+      <button type="submit" data-drawer-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
         <i class="fa-solid fa-floppy-disk"></i>
         <span>Enregistrer</span>
       </button>
@@ -125,26 +125,27 @@ function defaultButtons() {
   `;
 }
 
-// Ouvre la fenêtre modale de création ou modification d'une mission
+// Ouvre le drawer de création ou modification d'une mission
 function openMissionForm(mission, clients, experts, auditeurs) {
   const utilisateurId = getCurrentUser().id;
 
-  openModal({
+  openDrawer({
     title: mission ? "Modifier la mission" : "Nouvelle mission",
+    subtitle: mission ? mission.titre : "",
     icon: "fa-briefcase",
     body: missionFormBody(mission, clients, experts, auditeurs),
     confirmLabel: mission ? "Enregistrer" : "Créer",
-    onConfirm: async (modalElement) => {
+    onConfirm: async (drawerElement) => {
       const data = {
-        titre: modalElement.querySelector("#missionTitre").value.trim(),
-        description: modalElement.querySelector("#missionDescription").value.trim(),
-        clientId: modalElement.querySelector("#missionClient").value,
-        expertComptableId: modalElement.querySelector("#missionExpert").value,
-        date_debut: modalElement.querySelector("#missionDateDebut").value,
-        date_fin_prevue: modalElement.querySelector("#missionDateFinPrevue").value,
-        statut: modalElement.querySelector("#missionStatut").value,
-        avancement: modalElement.querySelector("#missionAvancement").value,
-        auditeurs: Array.from(modalElement.querySelectorAll("[data-auditeur-checkbox]:checked")).map((el) => el.value),
+        titre: drawerElement.querySelector("#missionTitre").value.trim(),
+        description: drawerElement.querySelector("#missionDescription").value.trim(),
+        clientId: drawerElement.querySelector("#missionClient").value,
+        expertComptableId: drawerElement.querySelector("#missionExpert").value,
+        date_debut: drawerElement.querySelector("#missionDateDebut").value,
+        date_fin_prevue: drawerElement.querySelector("#missionDateFinPrevue").value,
+        statut: drawerElement.querySelector("#missionStatut").value,
+        avancement: drawerElement.querySelector("#missionAvancement").value,
+        auditeurs: Array.from(drawerElement.querySelectorAll("[data-auditeur-checkbox]:checked")).map((el) => el.value),
       };
 
       const errors = {};
@@ -158,9 +159,9 @@ function openMissionForm(mission, clients, experts, auditeurs) {
       }
 
       if (Object.keys(errors).length > 0) {
-        const formEl = modalElement.querySelector("[data-modal-form]");
+        const formEl = drawerElement.querySelector("[data-drawer-form]");
         formEl.innerHTML = missionFormBody(data, clients, experts, auditeurs, errors) + defaultButtons();
-        formEl.querySelector("[data-modal-cancel]").addEventListener("click", closeModal);
+        formEl.querySelector("[data-drawer-cancel]").addEventListener("click", closeDrawer);
         return false;
       }
 
@@ -182,14 +183,15 @@ function openMissionForm(mission, clients, experts, auditeurs) {
   });
 }
 
-// Ouvre la fenêtre modale affichant le détail complet d'une mission
+// Ouvre le drawer affichant le détail complet d'une mission
 function openMissionDetails(mission, clients, experts, utilisateurs) {
   const client = clients.find((c) => sameId(c.id, mission.clientId));
   const expert = experts.find((e) => sameId(e.id, mission.expertComptableId));
   const auditeurs = utilisateurs.filter((u) => (mission.auditeurs || []).some((id) => sameId(id, u.id)));
 
-  openModal({
+  openDrawer({
     title: "Détails de la mission",
+    subtitle: mission.titre,
     icon: "fa-eye",
     confirmLabel: "Fermer",
     confirmIcon: "fa-xmark",
@@ -236,14 +238,15 @@ function avancementFormBody(mission) {
 function openAvancementForm(mission) {
   const utilisateurId = getCurrentUser().id;
 
-  openModal({
+  openDrawer({
     title: "Actualiser l'avancement",
+    subtitle: mission.titre,
     icon: "fa-gauge-high",
     body: avancementFormBody(mission),
     confirmLabel: "Enregistrer",
-    onConfirm: async (modalElement) => {
-      const avancement = modalElement.querySelector("#missionAvancementValue").value;
-      const statut = modalElement.querySelector("#missionAvancementStatut").value;
+    onConfirm: async (drawerElement) => {
+      const avancement = drawerElement.querySelector("#missionAvancementValue").value;
+      const statut = drawerElement.querySelector("#missionAvancementStatut").value;
 
       try {
         
@@ -263,25 +266,26 @@ function openAvancementForm(mission) {
 function openValidationMission(mission) {
   const utilisateurId = getCurrentUser().id;
 
-  openModal({
-    title: "Valider et clôturer la mission",
-    icon: "fa-stamp",
-    iconClass: "bg-emerald-100 text-emerald-600",
-    body: `<p class="text-sm leading-6 text-slate-600">Confirmez-vous avoir relu le rapport et validez-vous la clôture de la mission "<strong class="text-slate-950">${escapeHtml(mission.titre)}</strong>" ?</p>`,
-    confirmLabel: "Valider la clôture",
-    confirmIcon: "fa-check",
-    onConfirm: async () => {
+  openConfirmModal(
+    `Confirmez-vous avoir relu le rapport et validez-vous la clôture de la mission "<strong class="text-slate-950">${escapeHtml(mission.titre)}</strong>" ?`,
+    async () => {
       try {
         await updateMission(mission.id, { ...mission, statut: "termine", avancement: 100, date_fin_reelle: new Date().toISOString().slice(0, 10) }, utilisateurId);
         showToast("Mission clôturée avec succès.");
         await renderMissionPage();
-        return true;
       } catch (error) {
         showToast(error.message, "error");
-        return false;
       }
     },
-  });
+    {
+      title: "Valider et clôturer la mission",
+      icon: "fa-stamp",
+      iconClass: "bg-emerald-100 text-emerald-600",
+      confirmLabel: "Valider la clôture",
+      confirmIcon: "fa-check",
+      confirmClass: "bg-emerald-600 shadow-emerald-200 hover:bg-emerald-700",
+    }
+  );
 }
 
 // Affiche la page de gestion des missions (liste, filtre par statut, actions selon le rôle)
@@ -289,6 +293,7 @@ export async function renderMissionPage() {
   const app = document.getElementById("app");
   const user = getCurrentUser();
   const auditeurMode = isAuditeur();
+  const clientMode = isClient();
 
   let missions = [];
   let clients = [];
@@ -305,14 +310,16 @@ export async function renderMissionPage() {
 
   if (auditeurMode) {
     missions = missions.filter((m) => (m.auditeurs || []).some((id) => sameId(id, user.id)));
+  } else if (clientMode) {
+    missions = missions.filter((m) => sameId(m.clientId, user.clientId));
   }
 
   app.innerHTML = `
     <section>
       ${pageHeader({
-        title: auditeurMode ? "Mes missions" : "Liste des missions",
-        actionLabel: auditeurMode ? null : "Nouvelle mission",
-        actionId: auditeurMode ? null : "addMissionBtn",
+        title: (auditeurMode || clientMode) ? "Mes missions" : "Liste des missions",
+        actionLabel: (auditeurMode || clientMode) ? null : "Nouvelle mission",
+        actionId: (auditeurMode || clientMode) ? null : "addMissionBtn",
       })}
 
       ${renderFilterBar({
@@ -328,26 +335,30 @@ export async function renderMissionPage() {
     </section>
   `;
 
-  renderMissionTable(missions, clients, experts, utilisateurs, auditeurMode, auditeurs);
+  renderMissionTable(missions, clients, experts, utilisateurs, auditeurMode, auditeurs, clientMode);
 
-  if (!auditeurMode) {
+  if (!auditeurMode && !clientMode) {
     document.getElementById("addMissionBtn").addEventListener("click", () => openMissionForm(null, clients, experts, auditeurs));
   }
 
   document.getElementById("pageFilter").addEventListener("change", (event) => {
     const value = event.target.value;
     const filtered = value ? missions.filter((m) => m.statut === value) : missions;
-    renderMissionTable(filtered, clients, experts, utilisateurs, auditeurMode, auditeurs);
+    renderMissionTable(filtered, clients, experts, utilisateurs, auditeurMode, auditeurs, clientMode);
   });
 }
 
 // Génère et affiche le tableau des missions avec les actions disponibles selon le rôle de l'utilisateur
-function renderMissionTable(missions, clients, experts, utilisateurs, auditeurMode, auditeurs) {
+function renderMissionTable(missions, clients, experts, utilisateurs, auditeurMode, auditeurs, clientMode = false) {
   const wrapper = document.getElementById("missionTableWrapper");
 
   wrapper.innerHTML = renderTable({
     rows: missions,
-    emptyMessage: auditeurMode ? "Aucune mission ne vous a été affectée." : "Aucune mission enregistrée.",
+    emptyMessage: auditeurMode
+      ? "Aucune mission ne vous a été affectée."
+      : clientMode
+        ? "Aucune mission ne concerne votre entreprise pour le moment."
+        : "Aucune mission enregistrée.",
     columns: [
       { label: "Titre", render: (m) => `<strong class="font-bold text-slate-950">${escapeHtml(m.titre)}</strong>` },
       { label: "Client", width: "12%", render: (m) => escapeHtml(clients.find((c) => sameId(c.id, m.clientId))?.raison_sociale || "-") },
@@ -397,23 +408,32 @@ function renderMissionTable(missions, clients, experts, utilisateurs, auditeurMo
       },
       {
         label: "Actions",
-        width: "160px",
+        width: clientMode ? "80px" : "160px",
         align: "center",
-        render: (m) => auditeurMode
-          ? `
-            <div class="flex items-center justify-center gap-2">
-              ${actionButton({ icon: "fa-eye", colorClass: "bg-emerald-100 text-emerald-600", title: "Voir", attr: `data-view="${escapeHtml(m.id)}"` })}
-              ${m.statut !== "termine" ? actionButton({ icon: "fa-gauge-high", colorClass: "bg-blue-100 text-blue-600", title: "Actualiser l'avancement", attr: `data-progress="${escapeHtml(m.id)}"` }) : ""}
-            </div>
-          `
-          : `
-            <div class="flex items-center justify-center gap-2">
-              ${actionButton({ icon: "fa-eye", colorClass: "bg-emerald-100 text-emerald-600", title: "Voir", attr: `data-view="${escapeHtml(m.id)}"` })}
-              ${isExpertComptable() && m.statut === "en_relecture" ? actionButton({ icon: "fa-stamp", colorClass: "bg-emerald-100 text-emerald-600", title: "Valider et clôturer", attr: `data-validate="${escapeHtml(m.id)}"` }) : ""}
-              ${m.statut !== "termine" ? actionButton({ icon: "fa-pen", colorClass: "bg-amber-100 text-amber-600", title: "Modifier", attr: `data-edit="${escapeHtml(m.id)}"` }) : ""}
-              ${actionButton({ icon: "fa-trash", colorClass: "bg-rose-100 text-rose-600", title: "Supprimer", attr: `data-delete="${escapeHtml(m.id)}"` })}
-            </div>
-          `,
+        render: (m) => {
+          if (clientMode) {
+            return `
+              <div class="flex items-center justify-center">
+                ${actionButton({ icon: "fa-eye", colorClass: "bg-emerald-100 text-emerald-600", title: "Voir l'avancement", attr: `data-view="${escapeHtml(m.id)}"` })}
+              </div>
+            `;
+          }
+          return auditeurMode
+            ? `
+              <div class="flex items-center justify-center gap-2">
+                ${actionButton({ icon: "fa-eye", colorClass: "bg-emerald-100 text-emerald-600", title: "Voir", attr: `data-view="${escapeHtml(m.id)}"` })}
+                ${m.statut !== "termine" ? actionButton({ icon: "fa-gauge-high", colorClass: "bg-blue-100 text-blue-600", title: "Actualiser l'avancement", attr: `data-progress="${escapeHtml(m.id)}"` }) : ""}
+              </div>
+            `
+            : `
+              <div class="flex items-center justify-center gap-2">
+                ${actionButton({ icon: "fa-eye", colorClass: "bg-emerald-100 text-emerald-600", title: "Voir", attr: `data-view="${escapeHtml(m.id)}"` })}
+                ${isExpertComptable() && m.statut === "en_relecture" ? actionButton({ icon: "fa-stamp", colorClass: "bg-emerald-100 text-emerald-600", title: "Valider et clôturer", attr: `data-validate="${escapeHtml(m.id)}"` }) : ""}
+                ${m.statut !== "termine" ? actionButton({ icon: "fa-pen", colorClass: "bg-amber-100 text-amber-600", title: "Modifier", attr: `data-edit="${escapeHtml(m.id)}"` }) : ""}
+                ${actionButton({ icon: "fa-trash", colorClass: "bg-rose-100 text-rose-600", title: "Supprimer", attr: `data-delete="${escapeHtml(m.id)}"` })}
+              </div>
+            `;
+        },
       },
     ],
   });

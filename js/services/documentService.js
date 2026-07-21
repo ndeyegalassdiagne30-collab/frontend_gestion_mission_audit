@@ -8,6 +8,7 @@ import { logActivite } from "./journal_activiteService.js";
 function normalizeDocument(data) {
   return {
     id: data.id,
+    titre: String(data.titre || "").trim(),
     nom_fichier: String(data.nom_fichier || "").trim(),
     chemin: data.chemin,
     description: String(data.description || "").trim(),
@@ -25,6 +26,7 @@ export async function getDocuments() {
 
 // Ajoute un nouveau document (déjà téléversé sur Cloudinary) à une mission et journalise l'action
 export async function createDocument(data, utilisateurId) {
+  required(data.titre, "Le titre du document est obligatoire.");
   required(data.nom_fichier, "Le nom du fichier est obligatoire.");
   required(data.chemin, "Le fichier doit être téléversé avant l'enregistrement.");
   required(data.missionId, "La mission est obligatoire.");
@@ -42,7 +44,7 @@ export async function createDocument(data, utilisateurId) {
     "Impossible d'ajouter le document."
   );
 
-  await logActivite(`Ajout du document ${document.nom_fichier}`, utilisateurId);
+  await logActivite(`Ajout du document ${document.titre}`, utilisateurId);
   return created;
 }
 

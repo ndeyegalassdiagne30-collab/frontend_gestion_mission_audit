@@ -1,6 +1,6 @@
 import { pageHeader, renderFilterBar } from "../components/pageHerder.js";
 import { renderTable, actionButton } from "../components/table.js";
-import { openModal, closeModal } from "../components/modal.js";
+import { openDrawer, closeDrawer } from "../components/drawer.js";
 import { openConfirmModal } from "../components/confirmModal.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
@@ -10,12 +10,27 @@ import { getMissions } from "../services/missionService.js";
 import { uploadToCloudinary, formatTaille } from "../services/cloudinary.js";
 import { getCurrentUser, isAuditeur } from "../services/authService.js";
 
+// Extensions autorisées pour le dépôt de documents (bureautique/PDF uniquement, pas d'images ni de vidéos)
+const DOCUMENT_EXTENSIONS = [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv", ".odt", ".ods", ".odp"];
+
+// Vérifie que le fichier sélectionné est bien un document autorisé (via son extension)
+function isDocumentFile(file) {
+  const name = file.name.toLowerCase();
+  return DOCUMENT_EXTENSIONS.some((ext) => name.endsWith(ext));
+}
+
 // Génère le formulaire d'ajout d'un document (mission, description, fichier)
 function documentFormBody(missions, errors = {}) {
   const missionOptions = missions.map((m) => `<option value="${m.id}">${escapeHtml(m.titre)}</option>`).join("");
 
   return `
     <div>
+      <div class="mb-4">
+        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="documentTitre">Titre *</label>
+        <input class="w-full rounded-2xl border ${errors.titre ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="documentTitre" placeholder="ex: Bilan comptable 2025" autocomplete="off" />
+        ${errors.titre ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.titre}</p>` : ""}
+      </div>
+
       <div class="mb-4">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="documentMission">Mission *</label>
         <select class="w-full rounded-2xl border ${errors.missionId ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" id="documentMission">
@@ -32,7 +47,8 @@ function documentFormBody(missions, errors = {}) {
 
       <div class="mb-2">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="documentFile">Fichier *</label>
-        <input class="w-full rounded-2xl border ${errors.file ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-brand/10 file:px-4 file:py-2 file:text-sm file:font-bold file:text-brand focus:border-brand focus:ring-4 focus:ring-brand/10" type="file" id="documentFile" />
+        <input class="w-full rounded-2xl border ${errors.file ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-brand/10 file:px-4 file:py-2 file:text-sm file:font-bold file:text-brand focus:border-brand focus:ring-4 focus:ring-brand/10" type="file" id="documentFile" accept="${DOCUMENT_EXTENSIONS.join(",")}" />
+        <p class="mt-1 text-xs text-slate-400">Formats acceptés : PDF, Word, Excel, PowerPoint, texte, CSV.</p>
         ${errors.file ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.file}</p>` : ""}
       </div>
     </div>
@@ -43,8 +59,8 @@ function documentFormBody(missions, errors = {}) {
 function defaultButtons() {
   return `
     <div class="mt-2 flex justify-end gap-3">
-      <button type="button" data-modal-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
-      <button type="submit" data-modal-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
+      <button type="button" data-drawer-cancel class="af-btn-ghost rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+      <button type="submit" data-drawer-submit class="af-btn-primary inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-white">
         <i class="fa-solid fa-floppy-disk"></i>
         <span>Enregistrer</span>
       </button>
@@ -52,28 +68,31 @@ function defaultButtons() {
   `;
 }
 
-// Ouvre la fenêtre modale d'ajout d'un document et l'envoie vers Cloudinary avant enregistrement
+// Ouvre le drawer d'ajout d'un document et l'envoie vers Cloudinary avant enregistrement
 function openDocumentForm(missions) {
   const utilisateurId = getCurrentUser().id;
 
-  openModal({
+  openDrawer({
     title: "Nouveau document",
     icon: "fa-file-arrow-up",
     confirmLabel: "Ajouter",
     body: documentFormBody(missions),
-    onConfirm: async (modalElement) => {
-      const missionId = modalElement.querySelector("#documentMission").value;
-      const description = modalElement.querySelector("#documentDescription").value.trim();
-      const file = modalElement.querySelector("#documentFile").files[0];
+    onConfirm: async (drawerElement) => {
+      const titre = drawerElement.querySelector("#documentTitre").value.trim();
+      const missionId = drawerElement.querySelector("#documentMission").value;
+      const description = drawerElement.querySelector("#documentDescription").value.trim();
+      const file = drawerElement.querySelector("#documentFile").files[0];
 
       const errors = {};
+      if (!titre) errors.titre = "Le titre est requis";
       if (!missionId) errors.missionId = "La mission est requise";
       if (!file) errors.file = "Un fichier est requis";
+      else if (!isDocumentFile(file)) errors.file = "Seuls les documents sont acceptés (PDF, Word, Excel, PowerPoint, texte, CSV).";
 
       if (Object.keys(errors).length > 0) {
-        const formEl = modalElement.querySelector("[data-modal-form]");
+        const formEl = drawerElement.querySelector("[data-drawer-form]");
         formEl.innerHTML = documentFormBody(missions, errors) + defaultButtons();
-        formEl.querySelector("[data-modal-cancel]").addEventListener("click", closeModal);
+        formEl.querySelector("[data-drawer-cancel]").addEventListener("click", closeDrawer);
         return false;
       }
 
@@ -81,6 +100,7 @@ function openDocumentForm(missions) {
         const uploaded = await uploadToCloudinary(file);
 
         await createDocument({
+          titre,
           nom_fichier: file.name,
           chemin: uploaded.url,
           description,
@@ -155,7 +175,7 @@ function renderDocumentTable(documents, missions, auditeurMode, user) {
     rows: documents,
     emptyMessage: "Aucun document enregistré.",
     columns: [
-      { label: "Nom", render: (d) => `<strong class="font-bold text-slate-950">${escapeHtml(d.nom_fichier)}</strong>` },
+      { label: "Titre", render: (d) => `<strong class="font-bold text-slate-950">${escapeHtml(d.titre || d.nom_fichier)}</strong>` },
       { label: "Mission", width: "22%", render: (d) => escapeHtml(missions.find((m) => sameId(m.id, d.missionId))?.titre || "-") },
       { label: "Date d'ajout", width: "15%", render: (d) => escapeHtml(d.date_upload) },
       {

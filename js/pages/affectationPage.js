@@ -1,6 +1,6 @@
 import { pageHeader } from "../components/pageHerder.js";
 import { renderTable, actionButton } from "../components/table.js";
-import { openModal } from "../components/modal.js";
+import { openDrawer } from "../components/drawer.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { sameId } from "../utils/id.js";
@@ -28,15 +28,16 @@ function affectationFormBody(mission, auditeurs) {
   `;
 }
 
-// Ouvre la fenêtre modale permettant à l'expert-comptable de gérer les auditeurs affectés à une mission
+// Ouvre le drawer permettant à l'expert-comptable de gérer les auditeurs affectés à une mission
 function openAffectationForm(mission, auditeurs) {
-  openModal({
+  openDrawer({
     title: "Gérer les auditeurs affectés",
+    subtitle: mission.titre,
     icon: "fa-user-check",
     body: affectationFormBody(mission, auditeurs),
     confirmLabel: "Enregistrer",
-    onConfirm: async (modalElement) => {
-      const selected = Array.from(modalElement.querySelectorAll("[data-auditeur-checkbox]:checked")).map((el) => el.value);
+    onConfirm: async (drawerElement) => {
+      const selected = Array.from(drawerElement.querySelectorAll("[data-auditeur-checkbox]:checked")).map((el) => el.value);
 
       try {
         await updateAuditeursMission(mission.id, selected, getCurrentUser().id);

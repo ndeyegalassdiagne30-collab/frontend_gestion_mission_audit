@@ -369,6 +369,37 @@ body {
   animation: af-scale-in 0.28s var(--ease-out-soft) both;
 }
 
+/*Drawer (panneau latéral)*/
+
+.af-drawer-overlay {
+  transition: opacity 0.3s var(--ease-out-soft);
+}
+
+.af-drawer-panel {
+  transition: transform 0.35s var(--ease-out-soft);
+}
+
+/*Slide to confirm (glisser pour confirmer)*/
+
+.af-slide-thumb {
+  transition: transform 0.3s var(--ease-out-soft);
+  will-change: transform;
+}
+
+.af-slide-fill {
+  transition: width 0.3s var(--ease-out-soft);
+}
+
+.af-slide-track-confirmed {
+  background: linear-gradient(90deg, var(--brand-light), var(--brand));
+  border-color: var(--brand);
+}
+
+.af-slide-track:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 /*Toast*/
 
 .af-toast {

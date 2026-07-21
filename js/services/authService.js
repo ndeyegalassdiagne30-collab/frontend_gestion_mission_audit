@@ -29,6 +29,11 @@ export function isAuditeur() {
   return getCurrentUser()?.role === "auditeur";
 }
 
+// Indique si l'utilisateur connecté a le rôle client (compte créé depuis la fiche client)
+export function isClient() {
+  return getCurrentUser()?.role === "client";
+}
+
 // Authentifie l'utilisateur via email/mot de passe et ouvre sa session locale
 export async function login(email, motDePasse) {
   const response = await fetch(`${ENDPOINTS.utilisateurs}?email=${encodeURIComponent(email)}`);

@@ -34,6 +34,7 @@ export async function createUser(data, utilisateurId) {
     date_creation: new Date().toISOString().slice(0, 10),
     role: data.role,
     statut: data.statut || "actif",
+    ...(data.clientId ? { clientId: data.clientId } : {}),
   };
 
   const created = await apiRequest(
