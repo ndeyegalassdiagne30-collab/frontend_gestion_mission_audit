@@ -218,10 +218,12 @@ function renderUserTable(utilisateurs) {
         label: "Actions",
         width: "88px",
         align: "center",
-        render: (u) => `
+        render: (u) => sameId(u.id, currentUserId)
+          ? `<span class="text-xs text-slate-400">-</span>`
+          : `
           <div class="flex items-center justify-center gap-2">
             ${actionButton({ icon: "fa-pen", colorClass: "bg-amber-100 text-amber-600", title: "Modifier", attr: `data-edit="${escapeHtml(u.id)}"` })}
-            ${sameId(u.id, currentUserId) ? "" : actionButton({ icon: "fa-trash", colorClass: "bg-rose-100 text-rose-600", title: "Supprimer", attr: `data-delete="${escapeHtml(u.id)}"` })}
+            ${actionButton({ icon: "fa-trash", colorClass: "bg-rose-100 text-rose-600", title: "Supprimer", attr: `data-delete="${escapeHtml(u.id)}"` })}
           </div>
         `,
       },
