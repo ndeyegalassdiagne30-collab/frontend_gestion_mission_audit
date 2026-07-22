@@ -9,6 +9,7 @@ import { renderJournalActivitePage } from "./pages/journa_activitePage.js";
 import { renderProfilePage } from "./pages/profilePage.js";
 import { isAdmin, isExpertComptable, isAuditeur, isClient, isAuthenticated } from "./services/authService.js";
 import { renderLoginPage } from "./pages/loginPage.js";
+import { API_BASE_URL } from "./config/api.js";
 
 const routes = {
   dashboard: renderDashboardPage,
@@ -98,8 +99,7 @@ export async function navigate(page, { pushState = true } = {}) {
         <h1 class="text-2xl font-black tracking-tight text-slate-950">Erreur de chargement</h1>
         <p class="mt-2 text-sm leading-6 text-slate-600">${error.message}</p>
         <p class="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-          Vérifie que json-server est bien lancé avec :
-          <strong class="font-black text-slate-950">npm run server</strong>
+          Vérifie ta connexion internet et que l'API (<code class="font-mono text-xs">${API_BASE_URL}</code>) est bien accessible.
         </p>
       </section>
     `;
