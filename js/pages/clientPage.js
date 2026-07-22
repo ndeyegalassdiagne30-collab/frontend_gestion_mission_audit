@@ -22,54 +22,59 @@ const ACCOUNT_FIELDS_INNER_HIDDEN = "grid grid-cols-1 gap-4 pt-4 opacity-0 -tran
 const ACCOUNT_FIELDS_INNER_VISIBLE = "grid grid-cols-1 gap-4 pt-4 opacity-100 translate-y-0 transition-all duration-500 sm:grid-cols-2";
 
 // Génère le formulaire de création/modification d'un client
-function clientFormBody(client, errors = {}) {
+// `isEdit` est passé explicitement (plutôt que déduit de `values`) car lors d'un
+// réaffichage après erreur de validation, `values` contient les données saisies
+// (toujours "truthy") et ne permet donc pas de distinguer création et modification.
+function clientFormBody(values, errors = {}, isEdit = false) {
   return `
     <div>
       <div class="mb-4">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientRaisonSociale">Raison sociale *</label>
-        <input class="w-full rounded-2xl border ${errors.raison_sociale ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientRaisonSociale" value="${escapeHtml(client?.raison_sociale || "")}" placeholder="ex: SENTECH SARL" autocomplete="off" />
+        <input class="w-full rounded-2xl border ${errors.raison_sociale ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientRaisonSociale" value="${escapeHtml(values?.raison_sociale || "")}" placeholder="ex: SENTECH SARL" autocomplete="off" />
         ${errors.raison_sociale ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.raison_sociale}</p>` : ""}
       </div>
 
       <div class="mb-4">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientNinea">NINEA *</label>
-        <input class="w-full rounded-2xl border ${errors.ninea ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientNinea" value="${escapeHtml(client?.ninea || "")}" placeholder="ex: SN123456789" autocomplete="off" />
+        <input class="w-full rounded-2xl border ${errors.ninea ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientNinea" value="${escapeHtml(values?.ninea || "")}" placeholder="ex: SN123456789" autocomplete="off" />
         ${errors.ninea ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.ninea}</p>` : ""}
       </div>
 
       <div class="mb-4">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientAdresse">Adresse *</label>
-        <input class="w-full rounded-2xl border ${errors.adresse ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientAdresse" value="${escapeHtml(client?.adresse || "")}" placeholder="ex: Dakar, Sénégal" autocomplete="off" />
+        <input class="w-full rounded-2xl border ${errors.adresse ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientAdresse" value="${escapeHtml(values?.adresse || "")}" placeholder="ex: Dakar, Sénégal" autocomplete="off" />
         ${errors.adresse ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.adresse}</p>` : ""}
       </div>
 
       <div class="mb-4">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientTelephone">Téléphone *</label>
-        <input class="w-full rounded-2xl border ${errors.telephone ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientTelephone" value="${escapeHtml(client?.telephone || "")}" placeholder="ex: 771234567" autocomplete="off" />
+        <input class="w-full rounded-2xl border ${errors.telephone ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="text" id="clientTelephone" value="${escapeHtml(values?.telephone || "")}" placeholder="ex: 771234567" autocomplete="off" />
         ${errors.telephone ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.telephone}</p>` : ""}
       </div>
 
-      <div class="mb-4">
-        <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientEmail">Email *</label>
-        <input class="w-full rounded-2xl border ${errors.email ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="email" id="clientEmail" value="${escapeHtml(client?.email || "")}" placeholder="ex: contact@client.sn" autocomplete="off" />
-        ${errors.email ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.email}</p>` : ""}
-      </div>
+      ${isEdit ? `
+        <div class="mb-4">
+          <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientEmail">Email *</label>
+          <input class="w-full rounded-2xl border ${errors.email ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="email" id="clientEmail" value="${escapeHtml(values?.email || "")}" placeholder="ex: contact@client.sn" autocomplete="off" />
+          ${errors.email ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.email}</p>` : ""}
+        </div>
+      ` : ""}
 
       <div class="mb-4">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientDateCreation">Date de création *</label>
-        <input class="w-full rounded-2xl border ${errors.date_creation ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="date" id="clientDateCreation" value="${escapeHtml(client?.date_creation || new Date().toISOString().slice(0, 10))}" />
+        <input class="w-full rounded-2xl border ${errors.date_creation ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="date" id="clientDateCreation" value="${escapeHtml(values?.date_creation || new Date().toISOString().slice(0, 10))}" />
         ${errors.date_creation ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.date_creation}</p>` : ""}
       </div>
 
       <div class="mb-2">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientStatut">Statut</label>
         <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" id="clientStatut">
-          <option value="actif" ${client?.statut !== "inactif" ? "selected" : ""}>Actif</option>
-          <option value="inactif" ${client?.statut === "inactif" ? "selected" : ""}>Inactif</option>
+          <option value="actif" ${values?.statut !== "inactif" ? "selected" : ""}>Actif</option>
+          <option value="inactif" ${values?.statut === "inactif" ? "selected" : ""}>Inactif</option>
         </select>
       </div>
 
-      ${!client ? `
+      ${!isEdit ? `
         <div class="mt-4 border-t border-slate-100 pt-4">
           <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Accès client</label>
           <div id="clientAccountSlide"></div>
@@ -77,6 +82,11 @@ function clientFormBody(client, errors = {}) {
           <div id="clientAccountFields" class="${ACCOUNT_FIELDS_WRAPPER_HIDDEN}">
             <div class="min-h-0 overflow-hidden">
               <div id="clientAccountFieldsInner" class="${ACCOUNT_FIELDS_INNER_HIDDEN}">
+                <div class="sm:col-span-2">
+                  <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientEmail">Email *</label>
+                  <input class="w-full rounded-2xl border ${errors.email ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="email" id="clientEmail" value="${escapeHtml(values?.email || "")}" placeholder="ex: contact@client.sn" autocomplete="off" />
+                  ${errors.email ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.email}</p>` : ""}
+                </div>
                 <div>
                   <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientMotDePasse">Mot de passe *</label>
                   <input class="w-full rounded-2xl border ${errors.mot_de_passe ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="password" id="clientMotDePasse" placeholder="••••••••" autocomplete="new-password" />
@@ -109,21 +119,24 @@ function readClientForm(drawerElement) {
   };
 }
 
-// Vérifie les champs obligatoires du formulaire client et retourne les erreurs trouvées
-function validateClientForm(data) {
+// Vérifie les champs obligatoires du formulaire client et retourne les erreurs trouvées.
+// L'email n'est requis qu'en modification : à la création, il n'est demandé que si
+// l'option "compte client" est activée (voir validateAccountFields).
+function validateClientForm(data, isEdit) {
   const errors = {};
   if (!data.raison_sociale) errors.raison_sociale = "La raison sociale est requise";
   if (!data.ninea) errors.ninea = "Le NINEA est requis";
   if (!data.adresse) errors.adresse = "L'adresse est requise";
   if (!data.telephone) errors.telephone = "Le téléphone est requis";
-  if (!data.email) errors.email = "L'email est requis";
+  if (isEdit && !data.email) errors.email = "L'email est requis";
   if (!data.date_creation) errors.date_creation = "La date de création est requise";
   return errors;
 }
 
-// Vérifie le mot de passe et sa confirmation, uniquement requis quand l'option "compte client" est activée
-function validateAccountFields(motDePasse, motDePasseConfirm) {
+// Vérifie l'email, le mot de passe et sa confirmation, requis uniquement quand l'option "compte client" est activée
+function validateAccountFields(email, motDePasse, motDePasseConfirm) {
   const errors = {};
+  if (!email) errors.email = "L'email est requis pour créer un compte";
   if (!motDePasse) errors.mot_de_passe = "Le mot de passe est requis";
   else if (motDePasse.length < 6) errors.mot_de_passe = "Le mot de passe doit contenir au moins 6 caractères";
   if (!motDePasseConfirm) errors.mot_de_passe_confirm = "La confirmation est requise";
@@ -171,7 +184,7 @@ function openClientForm(client = null) {
     title: client ? "Modifier le client" : "Nouveau client",
     subtitle: client ? client.raison_sociale : "",
     icon: "fa-building",
-    body: clientFormBody(client),
+    body: clientFormBody(client, {}, Boolean(client)),
     confirmLabel: client ? "Enregistrer" : "Créer",
     onMount: (drawerElement) => {
       mountAccountSlide(drawerElement);
@@ -179,17 +192,17 @@ function openClientForm(client = null) {
     },
     onConfirm: async (drawerElement) => {
       const data = readClientForm(drawerElement);
-      const errors = validateClientForm(data);
+      const errors = validateClientForm(data, Boolean(client));
 
       if (!client && accountConfirmed) {
         const motDePasse = drawerElement.querySelector("#clientMotDePasse")?.value || "";
         const motDePasseConfirm = drawerElement.querySelector("#clientMotDePasseConfirm")?.value || "";
-        Object.assign(errors, validateAccountFields(motDePasse, motDePasseConfirm));
+        Object.assign(errors, validateAccountFields(data.email, motDePasse, motDePasseConfirm));
       }
 
       if (Object.keys(errors).length > 0) {
         const formEl = drawerElement.querySelector("[data-drawer-form]");
-        formEl.innerHTML = clientFormBody(data, errors) + defaultButtons();
+        formEl.innerHTML = clientFormBody(data, errors, Boolean(client)) + defaultButtons();
         formEl.querySelector("[data-drawer-cancel]").addEventListener("click", closeDrawer);
         mountAccountSlide(formEl);
         return false;
