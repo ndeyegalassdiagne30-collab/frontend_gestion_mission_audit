@@ -47,7 +47,7 @@ function userFormBody(utilisateur, isEdit, errors = {}) {
         <div>
           <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="userMotDePasseConfirm">Confirmation ${isEdit ? "" : "*"}</label>
           <input class="w-full rounded-2xl border ${errors.mot_de_passe_confirm ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="password" id="userMotDePasseConfirm" placeholder="••••••••" autocomplete="new-password" />
-          ${errors.mot_de_passe_confirm ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.mot_de_passe_confirm}</p>` : ""}
+          <p id="userMotDePasseConfirmError" class="mt-1 text-xs font-semibold text-rose-500 ${errors.mot_de_passe_confirm ? "" : "hidden"}">${errors.mot_de_passe_confirm || "Les mots de passe ne correspondent pas"}</p>
         </div>
       </div>
 
@@ -74,6 +74,24 @@ function userFormBody(utilisateur, isEdit, errors = {}) {
   `;
 }
 
+// Affiche/masque en direct le message "les mots de passe ne correspondent pas" pendant la saisie,
+// sans attendre la soumission du formulaire
+function bindPasswordMatchCheck(root, passwordId, confirmId, errorId) {
+  const passwordInput = root.querySelector(`#${passwordId}`);
+  const confirmInput = root.querySelector(`#${confirmId}`);
+  const errorEl = root.querySelector(`#${errorId}`);
+  if (!passwordInput || !confirmInput || !errorEl) return;
+
+  function check() {
+    const mismatch = confirmInput.value.length > 0 && passwordInput.value !== confirmInput.value;
+    errorEl.classList.toggle("hidden", !mismatch);
+    confirmInput.classList.toggle("border-rose-500", mismatch);
+  }
+
+  passwordInput.addEventListener("input", check);
+  confirmInput.addEventListener("input", check);
+}
+
 // Génère les boutons Annuler/Enregistrer (ou Créer) réaffichés dans le formulaire après une erreur de validation
 function defaultButtons(confirmLabel = "Enregistrer") {
   return `
@@ -98,6 +116,10 @@ function openUserForm(utilisateur = null) {
     icon: "fa-user",
     body: userFormBody(utilisateur, isEdit),
     confirmLabel: isEdit ? "Enregistrer" : "Créer",
+    onMount: (drawerElement) => {
+      bindPasswordMatchCheck(drawerElement, "userMotDePasse", "userMotDePasseConfirm", "userMotDePasseConfirmError");
+      drawerElement.querySelector("input, select, textarea")?.focus();
+    },
     onConfirm: async (drawerElement) => {
       const data = {
         nom: drawerElement.querySelector("#userNom").value.trim(),
@@ -125,6 +147,7 @@ function openUserForm(utilisateur = null) {
         const formEl = drawerElement.querySelector("[data-drawer-form]");
         formEl.innerHTML = userFormBody({ ...utilisateur, ...data }, isEdit, errors) + defaultButtons(isEdit ? "Enregistrer" : "Créer");
         formEl.querySelector("[data-drawer-cancel]").addEventListener("click", closeDrawer);
+        bindPasswordMatchCheck(formEl, "userMotDePasse", "userMotDePasseConfirm", "userMotDePasseConfirmError");
         return false;
       }
 

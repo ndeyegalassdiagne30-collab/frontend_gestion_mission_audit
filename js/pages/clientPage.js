@@ -95,7 +95,7 @@ function clientFormBody(values, errors = {}, isEdit = false) {
                 <div>
                   <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500" for="clientMotDePasseConfirm">Confirmation *</label>
                   <input class="w-full rounded-2xl border ${errors.mot_de_passe_confirm ? "border-rose-500" : "border-slate-200"} bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10" type="password" id="clientMotDePasseConfirm" placeholder="••••••••" autocomplete="new-password" />
-                  ${errors.mot_de_passe_confirm ? `<p class="mt-1 text-xs font-semibold text-rose-500">${errors.mot_de_passe_confirm}</p>` : ""}
+                  <p id="clientMotDePasseConfirmError" class="mt-1 text-xs font-semibold text-rose-500 ${errors.mot_de_passe_confirm ? "" : "hidden"}">${errors.mot_de_passe_confirm || "Les mots de passe ne correspondent pas"}</p>
                 </div>
               </div>
             </div>
@@ -144,6 +144,24 @@ function validateAccountFields(email, motDePasse, motDePasseConfirm) {
   return errors;
 }
 
+// Affiche/masque en direct le message "les mots de passe ne correspondent pas" pendant la saisie,
+// sans attendre la soumission du formulaire
+function bindPasswordMatchCheck(root, passwordId, confirmId, errorId) {
+  const passwordInput = root.querySelector(`#${passwordId}`);
+  const confirmInput = root.querySelector(`#${confirmId}`);
+  const errorEl = root.querySelector(`#${errorId}`);
+  if (!passwordInput || !confirmInput || !errorEl) return;
+
+  function check() {
+    const mismatch = confirmInput.value.length > 0 && passwordInput.value !== confirmInput.value;
+    errorEl.classList.toggle("hidden", !mismatch);
+    confirmInput.classList.toggle("border-rose-500", mismatch);
+  }
+
+  passwordInput.addEventListener("input", check);
+  confirmInput.addEventListener("input", check);
+}
+
 // Ouvre le drawer de création ou modification d'un client
 function openClientForm(client = null) {
   const utilisateurId = getCurrentUser().id;
@@ -156,6 +174,8 @@ function openClientForm(client = null) {
 
     const fieldsWrapper = drawerElement.querySelector("#clientAccountFields");
     const fieldsInner = drawerElement.querySelector("#clientAccountFieldsInner");
+
+    bindPasswordMatchCheck(drawerElement, "clientMotDePasse", "clientMotDePasseConfirm", "clientMotDePasseConfirmError");
 
     createSlideToConfirm(slideContainer, {
       label: "Glisser pour créer un client avec un compte",
