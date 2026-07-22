@@ -10,6 +10,7 @@ const ROLE_LABELS = {
   administrateur: "Administrateur",
   expert_comptable: "Expert-comptable",
   auditeur: "Auditeur",
+  client: "Client",
 };
 
 // Génère le formulaire de modification du profil (infos personnelles, photo, mot de passe)

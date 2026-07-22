@@ -13,6 +13,7 @@ const ROLE_LABELS = {
   administrateur: "Administrateur",
   expert_comptable: "Expert-comptable",
   auditeur: "Auditeur",
+  client: "Client",
 };
 
 // Génère le formulaire de création/modification d'un utilisateur

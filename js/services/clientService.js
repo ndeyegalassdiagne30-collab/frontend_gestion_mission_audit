@@ -18,13 +18,14 @@ function normalizeClient(data) {
   };
 }
 
-// Vérifie que les champs obligatoires d'un client sont renseignés
+// Vérifie que les champs obligatoires d'un client sont renseignés.
+// L'email n'est pas requis ici : il n'est nécessaire que si un compte d'accès est créé
+// en parallèle (voir clientPage.js), auquel cas c'est createUser() qui le validera.
 function validateClient(data) {
   required(data.raison_sociale, "La raison sociale est obligatoire.");
   required(data.ninea, "Le NINEA est obligatoire.");
   required(data.adresse, "L'adresse est obligatoire.");
   required(data.telephone, "Le téléphone est obligatoire.");
-  required(data.email, "L'email est obligatoire.");
   required(data.date_creation, "La date de création est obligatoire.");
 }
 
