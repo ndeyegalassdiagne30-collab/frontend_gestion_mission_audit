@@ -1,6 +1,7 @@
 import { pageHeader, renderFilterBar } from "../components/pageHerder.js";
 import { renderTable, actionButton } from "../components/table.js";
 import { openDrawer, closeDrawer } from "../components/drawer.js";
+import { renderAuditeurSelect, initAuditeurSelect } from "../components/auditeurSelect.js";
 import { openConfirmModal } from "../components/confirmModal.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
@@ -37,12 +38,6 @@ function missionFormBody(mission, clients, experts, auditeurs, errors = {}) {
   const clientOptions = clients.map((c) => `<option value="${c.id}" ${mission?.clientId == c.id ? "selected" : ""}>${escapeHtml(c.raison_sociale)}</option>`).join("");
   const expertOptions = experts.map((e) => `<option value="${e.id}" ${mission?.expertComptableId == e.id ? "selected" : ""}>${escapeHtml(e.prenom)} ${escapeHtml(e.nom)}</option>`).join("");
   const affectes = mission?.auditeurs || [];
-  const auditeurCheckboxes = auditeurs.map((a) => `
-    <label class="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
-      <input type="checkbox" value="${a.id}" ${affectes.some((id) => id == a.id) ? "checked" : ""} class="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand" data-auditeur-checkbox />
-      ${escapeHtml(a.prenom)} ${escapeHtml(a.nom)}
-    </label>
-  `).join("");
 
   return `
     <div>
@@ -104,9 +99,7 @@ function missionFormBody(mission, clients, experts, auditeurs, errors = {}) {
 
       <div class="mb-2">
         <label class="mb-2 block text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Auditeurs affectés</label>
-        <div class="grid grid-cols-2 gap-2">
-          ${auditeurCheckboxes || `<p class="col-span-2 text-sm text-slate-500">Aucun auditeur disponible.</p>`}
-        </div>
+        ${renderAuditeurSelect(auditeurs, affectes)}
       </div>
     </div>
   `;
@@ -162,6 +155,7 @@ function openMissionForm(mission, clients, experts, auditeurs) {
         const formEl = drawerElement.querySelector("[data-drawer-form]");
         formEl.innerHTML = missionFormBody(data, clients, experts, auditeurs, errors) + defaultButtons();
         formEl.querySelector("[data-drawer-cancel]").addEventListener("click", closeDrawer);
+        initAuditeurSelect(formEl);
         return false;
       }
 
@@ -179,6 +173,10 @@ function openMissionForm(mission, clients, experts, auditeurs) {
         showToast(error.message, "error");
         return false;
       }
+    },
+    onMount: (drawerElement) => {
+      initAuditeurSelect(drawerElement);
+      drawerElement.querySelector("#missionTitre")?.focus();
     },
   });
 }

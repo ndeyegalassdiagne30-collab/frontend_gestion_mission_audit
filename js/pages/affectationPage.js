@@ -1,6 +1,7 @@
 import { pageHeader } from "../components/pageHerder.js";
 import { renderTable, actionButton } from "../components/table.js";
 import { openDrawer } from "../components/drawer.js";
+import { renderAuditeurSelect, initAuditeurSelect } from "../components/auditeurSelect.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { sameId } from "../utils/id.js";
@@ -13,17 +14,10 @@ import { getCurrentUser } from "../services/authService.js";
 function affectationFormBody(mission, auditeurs) {
   const affectes = mission.auditeurs || [];
 
-  const checkboxes = auditeurs.map((a) => `
-    <label class="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
-      <input type="checkbox" value="${a.id}" ${affectes.some((id) => sameId(id, a.id)) ? "checked" : ""} class="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand" data-auditeur-checkbox />
-      ${escapeHtml(a.prenom)} ${escapeHtml(a.nom)}
-    </label>
-  `).join("");
-
   return `
     <div class="grid gap-2">
       <p class="mb-1 text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Mission : ${escapeHtml(mission.titre)}</p>
-      ${checkboxes || `<p class="text-sm text-slate-500">Aucun auditeur disponible.</p>`}
+      ${renderAuditeurSelect(auditeurs, affectes)}
     </div>
   `;
 }
@@ -49,6 +43,7 @@ function openAffectationForm(mission, auditeurs) {
         return false;
       }
     },
+    onMount: (drawerElement) => initAuditeurSelect(drawerElement),
   });
 }
 
