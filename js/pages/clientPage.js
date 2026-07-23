@@ -6,6 +6,7 @@ import { createSlideToConfirm } from "../components/slideToConfirm.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { sameId } from "../utils/id.js";
+import { isPhone } from "../utils/validator.js";
 import {
   createClient,
   deleteClient,
@@ -128,6 +129,7 @@ function validateClientForm(data, isEdit) {
   if (!data.ninea) errors.ninea = "Le NINEA est requis";
   if (!data.adresse) errors.adresse = "L'adresse est requise";
   if (!data.telephone) errors.telephone = "Le téléphone est requis";
+  else if (!isPhone(data.telephone)) errors.telephone = "Le téléphone doit contenir 9 chiffres";
   if (isEdit && !data.email) errors.email = "L'email est requis";
   if (!data.date_creation) errors.date_creation = "La date de création est requise";
   return errors;

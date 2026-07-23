@@ -1,7 +1,7 @@
 import { ENDPOINTS } from "../config/api.js";
 import { apiRequest } from "./apiClient.js";
 import { createId, sameId } from "../utils/id.js";
-import { required } from "../utils/validator.js";
+import { required, isPhone } from "../utils/validator.js";
 import { logActivite } from "./journal_activiteService.js";
 
 // Vérifie que les champs obligatoires d'un utilisateur sont renseignés
@@ -10,6 +10,7 @@ function validateUser(data, isCreate) {
   required(data.prenom, "Le prénom est obligatoire.");
   required(data.email, "L'email est obligatoire.");
   required(data.telephone, "Le téléphone est obligatoire.");
+  if (!isPhone(data.telephone)) throw new Error("Le téléphone doit contenir 9 chiffres.");
   required(data.role, "Le rôle est obligatoire.");
   if (isCreate) required(data.mot_de_passe, "Le mot de passe est obligatoire.");
 }

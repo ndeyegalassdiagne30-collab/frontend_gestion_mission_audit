@@ -9,3 +9,8 @@ export function required(value, message) {
 export function isEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value ?? "").trim());
 }
+
+// Vérifie qu'un numéro de téléphone contient exactement 9 chiffres (format sénégalais, ex: 771234567)
+export function isPhone(value) {
+  return /^\d{9}$/.test(String(value ?? "").trim());
+}
