@@ -5,6 +5,7 @@ import { openConfirmModal } from "../components/confirmModal.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { sameId } from "../utils/id.js";
+import { isPhone } from "../utils/validator.js";
 import { createUser, deleteUser, getUsers, updateUser } from "../services/userService.js";
 import { uploadToCloudinary } from "../services/cloudinary.js";
 import { getCurrentUser } from "../services/authService.js";
@@ -151,6 +152,7 @@ function openUserForm(utilisateur = null) {
         errors.mot_de_passe_confirm = "Les mots de passe ne correspondent pas";
       }
       if (!data.telephone) errors.telephone = "Le téléphone est requis";
+      else if (!isPhone(data.telephone)) errors.telephone = "Le téléphone doit contenir 9 chiffres";
 
       if (Object.keys(errors).length > 0) {
         const formEl = drawerElement.querySelector("[data-drawer-form]");

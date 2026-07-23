@@ -1,7 +1,7 @@
 import { ENDPOINTS } from "../config/api.js";
 import { apiRequest } from "./apiClient.js";
 import { createId, sameId } from "../utils/id.js";
-import { required } from "../utils/validator.js";
+import { required, isPhone } from "../utils/validator.js";
 import { logActivite } from "./journal_activiteService.js";
 
 // Met en forme les données brutes d'un client avant enregistrement en base
@@ -26,6 +26,7 @@ function validateClient(data) {
   required(data.ninea, "Le NINEA est obligatoire.");
   required(data.adresse, "L'adresse est obligatoire.");
   required(data.telephone, "Le téléphone est obligatoire.");
+  if (!isPhone(data.telephone)) throw new Error("Le téléphone doit contenir 9 chiffres.");
   required(data.date_creation, "La date de création est obligatoire.");
 }
 

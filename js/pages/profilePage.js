@@ -2,6 +2,7 @@ import { pageHeader } from "../components/pageHerder.js";
 import { openDrawer, closeDrawer } from "../components/drawer.js";
 import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
+import { isPhone } from "../utils/validator.js";
 import { updateUser } from "../services/userService.js";
 import { uploadToCloudinary } from "../services/cloudinary.js";
 import { getCurrentUser, updateCurrentUser } from "../services/authService.js";
@@ -92,6 +93,7 @@ function openProfileForm(user) {
       if (!data.prenom) errors.prenom = "Le prénom est requis";
       if (!data.email) errors.email = "L'email est requis";
       if (!data.telephone) errors.telephone = "Le téléphone est requis";
+      else if (!isPhone(data.telephone)) errors.telephone = "Le téléphone doit contenir 9 chiffres";
 
       if (Object.keys(errors).length > 0) {
         const formEl = drawerElement.querySelector("[data-drawer-form]");
