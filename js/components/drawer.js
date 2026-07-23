@@ -12,7 +12,7 @@ function getRoot() {
 }
 
 // Ouvre un panneau latéral (Drawer) réutilisé pour la consultation, la création et la modification
-// dans toute l'application (les popups de confirmation restent gérées par confirmModal.js)
+// dans toute l'application
 export function openDrawer({
   title,
   subtitle = "",

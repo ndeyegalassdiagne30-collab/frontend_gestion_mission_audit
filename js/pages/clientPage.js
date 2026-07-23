@@ -121,7 +121,7 @@ function readClientForm(drawerElement) {
 
 // Vérifie les champs obligatoires du formulaire client et retourne les erreurs trouvées.
 // L'email n'est requis qu'en modification : à la création, il n'est demandé que si
-// l'option "compte client" est activée (voir validateAccountFields).
+// l'option "compte client" est activée 
 function validateClientForm(data, isEdit) {
   const errors = {};
   if (!data.raison_sociale) errors.raison_sociale = "La raison sociale est requise";
@@ -145,21 +145,29 @@ function validateAccountFields(email, motDePasse, motDePasseConfirm) {
 }
 
 // Affiche/masque en direct le message "les mots de passe ne correspondent pas" pendant la saisie,
-// sans attendre la soumission du formulaire
+// sans attendre la soumission du formulaire. L'erreur ne s'affiche qu'après une première sortie du
+// champ Confirmation (blur) pour ne pas alarmer l'utilisateur dès la première frappe.
 function bindPasswordMatchCheck(root, passwordId, confirmId, errorId) {
   const passwordInput = root.querySelector(`#${passwordId}`);
   const confirmInput = root.querySelector(`#${confirmId}`);
   const errorEl = root.querySelector(`#${errorId}`);
   if (!passwordInput || !confirmInput || !errorEl) return;
 
+  let confirmTouched = false;
+
   function check() {
     const mismatch = confirmInput.value.length > 0 && passwordInput.value !== confirmInput.value;
-    errorEl.classList.toggle("hidden", !mismatch);
-    confirmInput.classList.toggle("border-rose-500", mismatch);
+    const showError = mismatch && confirmTouched;
+    errorEl.classList.toggle("hidden", !showError);
+    confirmInput.classList.toggle("border-rose-500", showError);
   }
 
   passwordInput.addEventListener("input", check);
   confirmInput.addEventListener("input", check);
+  confirmInput.addEventListener("blur", () => {
+    confirmTouched = true;
+    check();
+  });
 }
 
 // Ouvre le drawer de création ou modification d'un client
