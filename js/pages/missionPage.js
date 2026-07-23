@@ -227,7 +227,6 @@ function avancementFormBody(mission) {
           <option value="en_cours" ${mission.statut === "en_cours" ? "selected" : ""}>En cours</option>
           <option value="en_relecture" ${mission.statut === "en_relecture" ? "selected" : ""}>En relecture</option>
         </select>
-        <p class="mt-1.5 text-xs text-slate-400">Passez en "En relecture" pour envoyer le rapport à l'expert-comptable, qui validera la clôture.</p>
       </div>
     </div>
   `;
