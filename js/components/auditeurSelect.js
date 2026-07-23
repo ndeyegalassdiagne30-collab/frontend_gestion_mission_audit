@@ -1,6 +1,6 @@
 import { escapeHtml } from "../utils/html.js";
 
-// Génère un sélecteur multiple "à la Gmail" : un champ affichant les auditeurs
+// Génère un sélecteur multiple : un champ affichant les auditeurs
 // choisis sous forme de puces retirables, qui ouvre au clic une liste à cocher.
 // Les cases à cocher gardent l'attribut data-auditeur-checkbox : le code appelant
 // (missionPage.js, affectationPage.js) continue de lire la sélection avec

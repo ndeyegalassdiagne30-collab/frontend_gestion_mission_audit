@@ -41,7 +41,7 @@ export function createSlideToConfirm(container, {
 
   let dragging = false;    // vrai pendant qu'un glissement est en cours
   let startX = 0;          // position X de la souris/du doigt au moment où le glissement a commencé
-  let maxDistance = 0;     // distance maximale (en pixels) que le curseur peut parcourir dans la piste
+  let maxDistance = 0;     // distance maximale que le curseur peut parcourir dans la piste
   let isConfirmed = false; // état courant du composant (confirmé ou non)
 
   // Calcule la largeur actuelle de la piste (utile si la fenêtre/le drawer change de taille)

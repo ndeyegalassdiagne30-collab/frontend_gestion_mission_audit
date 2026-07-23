@@ -1,6 +1,6 @@
 import { ENDPOINTS } from "../config/api.js";
 import { apiRequest } from "./apiClient.js";
-import { createId } from "../utils/id.js";
+import { createId, sameId } from "../utils/id.js";
 import { required } from "../utils/validator.js";
 import { logActivite } from "./journal_activiteService.js";
 
@@ -14,6 +14,21 @@ function validateUser(data, isCreate) {
   if (isCreate) required(data.mot_de_passe, "Le mot de passe est obligatoire.");
 }
 
+// Vérifie qu'aucun autre utilisateur n'utilise déjà cet email ou ce téléphone
+// (essentiel pour l'email : login() retrouve l'utilisateur par email, un doublon
+// rendrait le second compte inaccessible à la connexion)
+async function ensureUnique(data, excludeId) {
+  const existants = await getUsers();
+  const email = String(data.email).trim().toLowerCase();
+  const telephone = String(data.telephone).trim();
+
+  const emailPris = existants.some((u) => !sameId(u.id, excludeId) && String(u.email).trim().toLowerCase() === email);
+  if (emailPris) throw new Error("Cet email est déjà utilisé par un autre utilisateur.");
+
+  const telephonePris = existants.some((u) => !sameId(u.id, excludeId) && String(u.telephone).trim() === telephone);
+  if (telephonePris) throw new Error("Ce téléphone est déjà utilisé par un autre utilisateur.");
+}
+
 // Récupère la liste de tous les utilisateurs
 export async function getUsers() {
   return apiRequest(ENDPOINTS.utilisateurs, {}, "Impossible de charger les utilisateurs.");
@@ -22,6 +37,7 @@ export async function getUsers() {
 // Crée un nouvel utilisateur et journalise l'action
 export async function createUser(data, utilisateurId) {
   validateUser(data, true);
+  await ensureUnique(data);
 
   const utilisateur = {
     id: createId("usr"),
@@ -50,6 +66,7 @@ export async function createUser(data, utilisateurId) {
 // Met à jour un utilisateur existant (mot de passe changé uniquement s'il est renseigné) et journalise l'action
 export async function updateUser(id, data, utilisateurId) {
   validateUser(data, false);
+  await ensureUnique(data, id);
 
   const payload = {
     nom: String(data.nom).trim(),

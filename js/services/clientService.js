@@ -1,6 +1,6 @@
 import { ENDPOINTS } from "../config/api.js";
 import { apiRequest } from "./apiClient.js";
-import { createId } from "../utils/id.js";
+import { createId, sameId } from "../utils/id.js";
 import { required } from "../utils/validator.js";
 import { logActivite } from "./journal_activiteService.js";
 
@@ -29,6 +29,22 @@ function validateClient(data) {
   required(data.date_creation, "La date de création est obligatoire.");
 }
 
+// Vérifie qu'aucun autre client n'utilise déjà ce téléphone, ni cet email s'il est renseigné
+// (l'email n'est obligatoire que si un compte d'accès est créé, voir validateClient ci-dessus)
+async function ensureUniqueClient(data, excludeId) {
+  const existants = await getClients();
+  const telephone = String(data.telephone).trim();
+
+  const telephonePris = existants.some((c) => !sameId(c.id, excludeId) && String(c.telephone).trim() === telephone);
+  if (telephonePris) throw new Error("Ce téléphone est déjà utilisé par un autre client.");
+
+  const email = String(data.email || "").trim().toLowerCase();
+  if (email) {
+    const emailPris = existants.some((c) => !sameId(c.id, excludeId) && String(c.email || "").trim().toLowerCase() === email);
+    if (emailPris) throw new Error("Cet email est déjà utilisé par un autre client.");
+  }
+}
+
 // Récupère la liste de tous les clients
 export async function getClients() {
   return apiRequest(ENDPOINTS.clients, {}, "Impossible de charger les clients.");
@@ -37,6 +53,7 @@ export async function getClients() {
 // Crée un nouveau client et journalise l'action
 export async function createClient(data, utilisateurId) {
   validateClient(data);
+  await ensureUniqueClient(data);
 
   const client = normalizeClient({ id: createId("cli"), ...data });
 
@@ -53,6 +70,7 @@ export async function createClient(data, utilisateurId) {
 // Met à jour un client existant et journalise l'action
 export async function updateClient(id, data, utilisateurId) {
   validateClient(data);
+  await ensureUniqueClient(data, id);
 
   const client = normalizeClient({ id, ...data });
 

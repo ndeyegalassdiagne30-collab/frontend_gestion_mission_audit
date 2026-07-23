@@ -4,10 +4,10 @@ import { createId } from "../utils/id.js";
 
 // Formate une date JS en chaîne "AAAA-MM-JJ HH:MM" pour le journal d'activité
 function formatDateHeure(date) {
-  const pad = (n) => String(n).padStart(2, "0");
-  const jour = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  const heure = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  return `${jour} ${heure}`;
+  const pad = (n) => String(n).padStart(2, "0"); // ajoute un zéro devant les nombres < 10 (ex: 5 -> "05")
+  const jour = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`; // "AAAA-MM-JJ" (getMonth() est indexé à partir de 0, d'où le +1)
+  const heure = `${pad(date.getHours())}:${pad(date.getMinutes())}`; // "HH:MM"
+  return `${jour} ${heure}`; // concatène date et heure séparées par un espace
 }
 
 // Récupère la liste de toutes les entrées du journal d'activité
